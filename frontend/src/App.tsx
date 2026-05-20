@@ -12,6 +12,8 @@ let msgId = 0
 export default function App() {
   const [faces, setFaces] = useState<FaceEntry[]>([])
   const [modelReady, setModelReady] = useState(false)
+  const [modelLoading, setModelLoading] = useState(false)
+  const [modelError, setModelError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [initializing, setInitializing] = useState(false)
@@ -29,12 +31,21 @@ export default function App() {
   const refreshStatus = useCallback(async () => {
     const s = await api.generatorStatus()
     setModelReady(s.ready)
+    setModelLoading(s.loading)
+    setModelError(s.error)
   }, [])
 
+  // Polling toutes les 5s quand le modèle est en cours de chargement
   useEffect(() => {
     refreshFaces()
     refreshStatus()
   }, [refreshFaces, refreshStatus])
+
+  useEffect(() => {
+    if (!modelLoading) return
+    const interval = setInterval(refreshStatus, 5000)
+    return () => clearInterval(interval)
+  }, [modelLoading, refreshStatus])
 
   const handleFiles = async (files: File[]) => {
     setUploading(true)
@@ -61,13 +72,12 @@ export default function App() {
 
   const handleInit = async () => {
     setInitializing(true)
-    push('Chargement du modèle SD… (peut prendre 3-5 min)')
     try {
       await api.initGenerator()
       await refreshStatus()
-      push('Modèle prêt !', 'success')
+      push('Chargement démarré en arrière-plan…')
     } catch (e: unknown) {
-      push(`Erreur chargement modèle : ${e instanceof Error ? e.message : String(e)}`, 'error')
+      push(`Erreur : ${e instanceof Error ? e.message : String(e)}`, 'error')
     }
     setInitializing(false)
   }
@@ -114,6 +124,8 @@ export default function App() {
 
         <GeneratePanel
           modelReady={modelReady}
+          modelLoading={modelLoading}
+          modelError={modelError}
           faceCount={faces.length}
           onInit={handleInit}
           onGenerate={handleGenerate}

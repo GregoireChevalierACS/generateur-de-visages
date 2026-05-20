@@ -9,6 +9,7 @@ Optimisations 4 Go VRAM :
   - enable_model_cpu_offload() : décharge les couches inutilisées sur CPU
   - Génération en 512×512
 """
+import threading
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -45,10 +46,39 @@ class GeneratorService:
     def __init__(self):
         self._pipe = None
         self._ready = False
+        self._loading = False
+        self._load_error: Optional[str] = None
 
     @property
     def is_ready(self) -> bool:
         return self._ready
+
+    @property
+    def is_loading(self) -> bool:
+        return self._loading
+
+    @property
+    def load_error(self) -> Optional[str]:
+        return self._load_error
+
+    def load_in_background(self) -> bool:
+        """Lance le chargement dans un thread séparé. Retourne False si déjà en cours."""
+        if self._ready or self._loading:
+            return False
+        thread = threading.Thread(target=self._load_blocking, daemon=True)
+        thread.start()
+        return True
+
+    def _load_blocking(self) -> None:
+        """Exécuté dans un thread — bloque jusqu'à la fin du chargement."""
+        self._loading = True
+        self._load_error = None
+        try:
+            self.load()
+        except Exception as e:
+            self._load_error = str(e)
+        finally:
+            self._loading = False
 
     def load(self) -> None:
         """Télécharge et initialise le pipeline SD + IP-Adapter (appel unique)."""

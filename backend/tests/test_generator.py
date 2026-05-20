@@ -39,6 +39,29 @@ def test_service_not_ready_at_init():
     assert svc.is_ready is False
 
 
+def test_service_not_loading_at_init():
+    svc = GeneratorService()
+    assert svc.is_loading is False
+
+
+def test_service_no_error_at_init():
+    svc = GeneratorService()
+    assert svc.load_error is None
+
+
+def test_load_in_background_returns_true_when_idle():
+    svc = GeneratorService()
+    svc._ready = True  # skip actual load
+    # already ready → returns False
+    assert svc.load_in_background() is False
+
+
+def test_load_in_background_returns_false_when_loading():
+    svc = GeneratorService()
+    svc._loading = True
+    assert svc.load_in_background() is False
+
+
 def test_generate_raises_when_not_loaded():
     svc = GeneratorService()
     with pytest.raises(RuntimeError, match="n'est pas chargé"):

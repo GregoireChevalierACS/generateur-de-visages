@@ -78,7 +78,7 @@ export const api = {
     await fetch(`${BASE}/faces`, { method: 'DELETE' })
   },
 
-  async generatorStatus(): Promise<{ ready: boolean }> {
+  async generatorStatus(): Promise<{ ready: boolean; loading: boolean; error: string | null }> {
     const res = await fetch(`${BASE}/generate/status`)
     return res.json()
   },

@@ -2,6 +2,8 @@ import { useState } from 'react'
 
 interface Props {
   modelReady: boolean
+  modelLoading: boolean
+  modelError: string | null
   faceCount: number
   onInit: () => Promise<void>
   onGenerate: (ipScale: number, seed: number | null) => Promise<void>
@@ -11,7 +13,8 @@ interface Props {
 }
 
 export function GeneratePanel({
-  modelReady, faceCount, onInit, onGenerate,
+  modelReady, modelLoading, modelError,
+  faceCount, onInit, onGenerate,
   generating, initializing, generatedUrl,
 }: Props) {
   const [ipScale, setIpScale] = useState(0.7)
@@ -23,21 +26,50 @@ export function GeneratePanel({
   return (
     <section className="space-y-5">
       {/* Status modèle */}
-      <div className="flex items-center gap-3">
-        <div className={`w-2 h-2 rounded-full ${modelReady ? 'bg-green-400' : 'bg-zinc-600'}`} />
-        <span className="text-sm text-zinc-400">
-          {modelReady ? 'Modèle prêt' : 'Modèle non chargé'}
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-900 border border-zinc-800">
+        {modelReady ? (
+          <div className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
+        ) : modelLoading ? (
+          <svg className="w-3 h-3 animate-spin text-indigo-400 shrink-0" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+        ) : modelError ? (
+          <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+        ) : (
+          <div className="w-2 h-2 rounded-full bg-zinc-600 shrink-0" />
+        )}
+
+        <span className="text-sm text-zinc-400 flex-1">
+          {modelReady
+            ? 'Modèle prêt'
+            : modelLoading
+            ? 'Chargement du modèle… (peut prendre 3-5 min)'
+            : modelError
+            ? `Erreur : ${modelError}`
+            : 'Modèle non chargé'}
         </span>
-        {!modelReady && (
+
+        {!modelReady && !modelLoading && (
           <button
             onClick={onInit}
             disabled={initializing}
-            className="ml-auto text-xs bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+            className="text-xs bg-indigo-700 hover:bg-indigo-600 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50 shrink-0"
           >
-            {initializing ? 'Chargement (~5 min)…' : 'Charger le modèle'}
+            {initializing ? 'Démarrage…' : 'Charger le modèle'}
           </button>
         )}
       </div>
+
+      {/* Barre de progression pendant le chargement */}
+      {modelLoading && (
+        <div className="text-xs text-zinc-500 space-y-1">
+          <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-600 rounded-full animate-pulse w-3/4" />
+          </div>
+          <p className="text-center">Téléchargement en cours (~2 Go)… ne ferme pas la fenêtre</p>
+        </div>
+      )}
 
       {/* Paramètres */}
       <div className="space-y-3 p-4 rounded-xl bg-zinc-900 border border-zinc-800">
@@ -63,7 +95,7 @@ export function GeneratePanel({
             onChange={e => setUseSeed(e.target.checked)}
             className="accent-indigo-500"
           />
-          Graine fixe (reproductible)
+          Graine fixe (résultats reproductibles)
         </label>
         {useSeed && (
           <input

@@ -42,16 +42,22 @@ def _load_face_images() -> list[Image.Image]:
 
 @router.post("/generate/init")
 def init_generator():
-    """Télécharge et initialise le modèle SD + IP-Adapter (appel unique, ~3-5 min)."""
+    """Lance le chargement SD + IP-Adapter en arrière-plan et retourne immédiatement."""
     if generator_service.is_ready:
         return {"status": "already_loaded"}
-    generator_service.load()
-    return {"status": "loaded"}
+    if generator_service.is_loading:
+        return {"status": "loading"}
+    generator_service.load_in_background()
+    return {"status": "started"}
 
 
 @router.get("/generate/status")
 def generator_status():
-    return {"ready": generator_service.is_ready}
+    return {
+        "ready": generator_service.is_ready,
+        "loading": generator_service.is_loading,
+        "error": generator_service.load_error,
+    }
 
 
 @router.post("/generate", response_model=GenerateResponse)

@@ -82,9 +82,19 @@ def test_generator_status_returns_ready_field():
     assert "ready" in resp.json()
 
 
+def test_generator_status_has_loading_and_error_fields():
+    resp = client.get("/api/generate/status")
+    data = resp.json()
+    assert "loading" in data
+    assert "error" in data
+
+
 def test_generator_status_initially_false():
     resp = client.get("/api/generate/status")
-    assert resp.json()["ready"] is False
+    data = resp.json()
+    assert data["ready"] is False
+    assert data["loading"] is False
+    assert data["error"] is None
 
 
 def test_generate_returns_503_when_model_not_ready():
@@ -93,22 +103,35 @@ def test_generate_returns_503_when_model_not_ready():
     assert resp.status_code == 503
 
 
-def test_init_endpoint_calls_load(monkeypatch):
+def test_init_endpoint_starts_background_load(monkeypatch):
     svc_mock = MagicMock()
     svc_mock.is_ready = False
+    svc_mock.is_loading = False
     monkeypatch.setattr(gen_router, "generator_service", svc_mock)
     resp = client.post("/api/generate/init")
     assert resp.status_code == 200
-    svc_mock.load.assert_called_once()
+    assert resp.json()["status"] == "started"
+    svc_mock.load_in_background.assert_called_once()
 
 
 def test_init_endpoint_skips_if_already_loaded(monkeypatch):
     svc_mock = MagicMock()
     svc_mock.is_ready = True
+    svc_mock.is_loading = False
     monkeypatch.setattr(gen_router, "generator_service", svc_mock)
     resp = client.post("/api/generate/init")
     assert resp.json()["status"] == "already_loaded"
-    svc_mock.load.assert_not_called()
+    svc_mock.load_in_background.assert_not_called()
+
+
+def test_init_endpoint_skips_if_already_loading(monkeypatch):
+    svc_mock = MagicMock()
+    svc_mock.is_ready = False
+    svc_mock.is_loading = True
+    monkeypatch.setattr(gen_router, "generator_service", svc_mock)
+    resp = client.post("/api/generate/init")
+    assert resp.json()["status"] == "loading"
+    svc_mock.load_in_background.assert_not_called()
 
 
 # ---- Génération mockée ----
