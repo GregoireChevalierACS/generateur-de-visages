@@ -4,7 +4,8 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 from PIL import Image
 
-from app.services.generator import generator_service, DEFAULT_IP_SCALE, DEFAULT_STEPS, DEFAULT_GUIDANCE
+import app.services.generator as _gen_module
+from app.services.generator import DEFAULT_IP_SCALE, DEFAULT_STEPS, DEFAULT_GUIDANCE
 from app.services.face_store import list_faces
 from app.config import FACES_DIR
 
@@ -43,26 +44,29 @@ def _load_face_images() -> list[Image.Image]:
 @router.post("/generate/init")
 def init_generator():
     """Lance le chargement SD + IP-Adapter en arrière-plan et retourne immédiatement."""
-    if generator_service.is_ready:
+    svc = _gen_module.generator_service
+    if svc.is_ready:
         return {"status": "already_loaded"}
-    if generator_service.is_loading:
+    if svc.is_loading:
         return {"status": "loading"}
-    generator_service.load_in_background()
+    svc.load_in_background()
     return {"status": "started"}
 
 
 @router.get("/generate/status")
 def generator_status():
+    svc = _gen_module.generator_service
     return {
-        "ready": generator_service.is_ready,
-        "loading": generator_service.is_loading,
-        "error": generator_service.load_error,
+        "ready": svc.is_ready,
+        "loading": svc.is_loading,
+        "error": svc.load_error,
     }
 
 
 @router.post("/generate", response_model=GenerateResponse)
 def generate_face(req: GenerateRequest):
-    if not generator_service.is_ready:
+    svc = _gen_module.generator_service
+    if not svc.is_ready:
         raise HTTPException(
             status_code=503,
             detail="Le modèle n'est pas initialisé. Appelez POST /api/generate/init d'abord.",
@@ -81,7 +85,7 @@ def generate_face(req: GenerateRequest):
         prompt = f"{prompt}, {req.prompt_extra}"
 
     try:
-        _, url = generator_service.generate(
+        _, url = svc.generate(
             reference_images=face_images,
             ip_scale=req.ip_scale,
             num_steps=req.steps,

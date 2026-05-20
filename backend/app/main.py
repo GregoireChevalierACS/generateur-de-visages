@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import UPLOADS_DIR, FACES_DIR
@@ -34,6 +35,15 @@ app.include_router(upload.router, prefix="/api")
 app.include_router(detect.router, prefix="/api")
 app.include_router(faces.router, prefix="/api")
 app.include_router(generate.router, prefix="/api")
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    import traceback
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"{type(exc).__name__}: {exc}", "trace": traceback.format_exc()},
+    )
 
 
 @app.get("/health")
