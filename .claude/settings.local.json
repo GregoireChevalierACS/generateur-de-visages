@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum | Select-Object @{N='RAM_Total_GB';E={[math]::Round\\($_.Sum/1GB,1\\)}})"
+    ]
+  }
+}
