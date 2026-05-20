@@ -139,10 +139,14 @@ class GeneratorService:
         if seed is not None:
             generator.manual_seed(seed)
 
+        # Diffusers interprète une list[Image] comme N adapters distincts.
+        # Pour 1 adapter avec plusieurs références : passer [[img1, img2, ...]]
+        ip_images = [reference_images] if len(reference_images) > 1 else reference_images[0]
+
         result = self._pipe(
             prompt=prompt,
             negative_prompt=negative_prompt,
-            ip_adapter_image=reference_images,
+            ip_adapter_image=ip_images,
             num_inference_steps=num_steps,
             guidance_scale=guidance_scale,
             height=IMAGE_SIZE,

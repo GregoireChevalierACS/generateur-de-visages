@@ -160,7 +160,16 @@ def test_generate_with_multiple_references(loaded_service):
     refs = [make_face_image((c, c, c)) for c in (100, 150, 200)]
     svc.generate(refs)
     call_kwargs = pipe_mock.call_args.kwargs
-    assert call_kwargs["ip_adapter_image"] == refs
+    # Plusieurs refs → wrappé dans [[img1, img2, ...]] pour 1 adapter
+    assert call_kwargs["ip_adapter_image"] == [refs]
+
+
+def test_generate_single_reference_not_wrapped(loaded_service):
+    svc, pipe_mock, _, _ = loaded_service
+    ref = make_face_image()
+    svc.generate([ref])
+    call_kwargs = pipe_mock.call_args.kwargs
+    assert call_kwargs["ip_adapter_image"] == ref
 
 
 def test_generate_image_size_is_correct(loaded_service):

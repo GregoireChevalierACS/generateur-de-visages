@@ -80,14 +80,19 @@ def generate_face(req: GenerateRequest):
     if req.prompt_extra:
         prompt = f"{prompt}, {req.prompt_extra}"
 
-    _, url = generator_service.generate(
-        reference_images=face_images,
-        ip_scale=req.ip_scale,
-        num_steps=req.steps,
-        guidance_scale=req.guidance_scale,
-        seed=req.seed,
-        prompt=prompt,
-    )
+    try:
+        _, url = generator_service.generate(
+            reference_images=face_images,
+            ip_scale=req.ip_scale,
+            num_steps=req.steps,
+            guidance_scale=req.guidance_scale,
+            seed=req.seed,
+            prompt=prompt,
+        )
+    except Exception as exc:
+        import traceback
+        detail = f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=500, detail=detail)
 
     return GenerateResponse(
         url=url,
