@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from PIL import Image
 
 import app.services.generator as _gen_module
-from app.services.generator import DEFAULT_IP_SCALE, DEFAULT_STEPS, DEFAULT_GUIDANCE
+from app.services.generator import DEFAULT_IP_SCALE, DEFAULT_STEPS, DEFAULT_GUIDANCE, random_diversity_tags
 from app.services.face_store import list_faces
 from app.config import FACES_DIR
 
@@ -80,7 +80,7 @@ def generate_face(req: GenerateRequest):
         )
 
     from app.services.generator import DEFAULT_PROMPT
-    prompt = DEFAULT_PROMPT
+    prompt = f"{DEFAULT_PROMPT}, {random_diversity_tags()}"
     if req.prompt_extra:
         prompt = f"{prompt}, {req.prompt_extra}"
 

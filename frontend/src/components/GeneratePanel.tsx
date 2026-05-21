@@ -6,7 +6,7 @@ interface Props {
   modelError: string | null
   faceCount: number
   onInit: () => Promise<void>
-  onGenerate: (ipScale: number, seed: number | null) => Promise<void>
+  onGenerate: (ipScale: number, seed: number | null, promptExtra: string) => Promise<void>
   generating: boolean
   initializing: boolean
   generatedUrl: string | null
@@ -20,6 +20,7 @@ export function GeneratePanel({
   const [ipScale, setIpScale] = useState(0.7)
   const [useSeed, setUseSeed] = useState(false)
   const [seed, setSeed] = useState(42)
+  const [promptExtra, setPromptExtra] = useState('')
 
   const canGenerate = modelReady && faceCount > 0 && !generating
 
@@ -105,6 +106,19 @@ export function GeneratePanel({
             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500"
           />
         )}
+
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-zinc-400">
+            Description libre <span className="text-zinc-600">(ex : old man, long hair, scar)</span>
+          </span>
+          <input
+            type="text"
+            value={promptExtra}
+            onChange={e => setPromptExtra(e.target.value)}
+            placeholder="Laisse vide pour variation automatique"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
+          />
+        </label>
       </div>
 
       {faceCount === 0 && (
@@ -115,7 +129,7 @@ export function GeneratePanel({
 
       {/* Bouton générer */}
       <button
-        onClick={() => onGenerate(ipScale, useSeed ? seed : null)}
+        onClick={() => onGenerate(ipScale, useSeed ? seed : null, promptExtra)}
         disabled={!canGenerate}
         className="w-full py-3 rounded-xl font-semibold text-sm transition-all bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed"
       >

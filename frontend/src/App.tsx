@@ -82,12 +82,12 @@ export default function App() {
     setInitializing(false)
   }
 
-  const handleGenerate = async (ipScale: number, seed: number | null) => {
+  const handleGenerate = async (ipScale: number, seed: number | null, promptExtra: string) => {
     setGenerating(true)
     setGeneratedUrl(null)
     push('Génération en cours…')
     try {
-      const result = await api.generate({ ip_scale: ipScale, seed, steps: 30 })
+      const result = await api.generate({ ip_scale: ipScale, seed, steps: 30, prompt_extra: promptExtra })
       setGeneratedUrl(result.url)
       push(`Généré à partir de ${result.reference_faces_used} visage(s)`, 'success')
     } catch (e: unknown) {

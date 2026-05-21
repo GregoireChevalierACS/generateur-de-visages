@@ -9,6 +9,7 @@ Optimisations 4 Go VRAM :
   - enable_model_cpu_offload() : décharge les couches inutilisées sur CPU
   - Génération en 512×512
 """
+import random
 import threading
 import uuid
 from pathlib import Path
@@ -40,6 +41,19 @@ IMAGE_SIZE = 512
 DEFAULT_STEPS = 30
 DEFAULT_GUIDANCE = 7.5
 DEFAULT_IP_SCALE = 0.7   # 0 = ignore les références, 1 = très proche
+
+_DIVERSITY_GENDER = ["male character", "female character"]
+_DIVERSITY_AGE    = ["young adult", "young adult", "middle-aged", "elderly"]
+_DIVERSITY_STYLE  = ["", "", "short hair", "long hair", "beard", "glasses"]
+
+
+def random_diversity_tags() -> str:
+    """Retourne des tags aléatoires de genre/âge/style pour varier les sorties."""
+    parts = [random.choice(_DIVERSITY_GENDER), random.choice(_DIVERSITY_AGE)]
+    extra = random.choice(_DIVERSITY_STYLE)
+    if extra:
+        parts.append(extra)
+    return ", ".join(parts)
 
 
 class GeneratorService:
